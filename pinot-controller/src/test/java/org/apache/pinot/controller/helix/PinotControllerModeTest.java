@@ -18,7 +18,10 @@
  */
 package org.apache.pinot.controller.helix;
 
+import java.util.Map;
 import org.apache.helix.HelixManager;
+import org.apache.helix.model.ExternalView;
+import org.apache.pinot.common.utils.CommonConstants;
 import org.apache.pinot.controller.ControllerConf;
 import org.apache.pinot.controller.ControllerStarter;
 import org.apache.pinot.util.TestUtils;
@@ -37,6 +40,7 @@ public class PinotControllerModeTest extends ControllerTest {
   public void setUp() {
     startZk();
     config = getDefaultControllerConfiguration();
+//    config.setEnableLeadControllerResource(true);
     controllerPortOffset = 0;
   }
 
@@ -89,6 +93,8 @@ public class PinotControllerModeTest extends ControllerTest {
     // Starting a helix controller.
     ControllerConf config2 = getDefaultControllerConfiguration();
     config2.setHelixClusterName(getHelixClusterName());
+    // Enable the lead controller resource.
+    config2.setEnableLeadControllerResource(true);
     config2.setControllerMode(ControllerConf.ControllerMode.HELIX_ONLY);
     config2.setControllerPort(Integer.toString(Integer.parseInt(config.getControllerPort()) + controllerPortOffset++));
     ControllerStarter helixControllerStarter = new ControllerStarter(config2);
@@ -112,8 +118,25 @@ public class PinotControllerModeTest extends ControllerTest {
     TestUtils.waitForCondition(aVoid -> _helixResourceManager.getAllInstances().size() == 2, TIMEOUT_IN_MS,
         "Failed to start the 2nd pinot only controller in " + TIMEOUT_IN_MS + "ms.");
 
-    secondControllerStarter.stop();
+    // Disable lead controller resource, all the participants are in offline state (from slave state).
+    _helixAdmin.enableResource(getHelixClusterName(), CommonConstants.Helix.LEAD_CONTROLLER_RESOURCE_NAME, false);
 
+    TestUtils.waitForCondition(aVoid -> {
+          ExternalView leadControllerResourceExternalView = _helixResourceManager.getLeadControllerResourceExternalView();
+          for (String partition : leadControllerResourceExternalView.getPartitionSet()) {
+            Map<String, String> stateMap = leadControllerResourceExternalView.getStateMap(partition);
+            Assert.assertEquals(stateMap.size(), 2);
+
+            for (Map.Entry<String, String> entry : stateMap.entrySet()) {
+              if (!"OFFLINE".equals(entry.getValue())) {
+                return false;
+              }
+            }
+          }
+          return true;
+        }, TIMEOUT_IN_MS, "Failed to mark all the participants offline in " + TIMEOUT_IN_MS + "ms.");
+
+    secondControllerStarter.stop();
     stopController();
     _controllerStarter = null;
     helixControllerStarter.stop();

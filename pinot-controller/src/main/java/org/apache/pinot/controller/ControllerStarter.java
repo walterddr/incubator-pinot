@@ -94,6 +94,7 @@ public class ControllerStarter {
   private final String _instanceId;
   private final boolean _isUpdateStateModel;
   private final boolean _enableBatchMessageMode;
+  private final boolean _enableLeadControllerResource;
   private final ControllerConf.ControllerMode _controllerMode;
 
   private HelixManager _helixControllerManager;
@@ -125,6 +126,7 @@ public class ControllerStarter {
     _instanceId = conf.getControllerHost() + "_" + conf.getControllerPort();
     _isUpdateStateModel = _config.isUpdateSegmentStateModel();
     _enableBatchMessageMode = _config.getEnableBatchMessageMode();
+    _enableLeadControllerResource = _config.getEnableLeadControllerResource();
 
     _metricsRegistry = new MetricsRegistry();
     _controllerMetrics = new ControllerMetrics(_metricsRegistry);
@@ -219,7 +221,8 @@ public class ControllerStarter {
     // Register and connect instance as Helix controller.
     LOGGER.info("Starting Helix controller");
     _helixControllerManager = HelixSetupUtils
-        .setup(_helixClusterName, _helixZkURL, _instanceId, _isUpdateStateModel, _enableBatchMessageMode);
+        .setup(_helixClusterName, _helixZkURL, _instanceId, _isUpdateStateModel, _enableBatchMessageMode,
+            _enableLeadControllerResource);
 
     // Emit helix controller metrics
     _controllerMetrics.addCallbackGauge(CommonConstants.Helix.INSTANCE_CONNECTED_METRIC_NAME,
