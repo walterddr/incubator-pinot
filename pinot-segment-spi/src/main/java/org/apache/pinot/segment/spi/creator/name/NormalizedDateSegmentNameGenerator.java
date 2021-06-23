@@ -90,10 +90,14 @@ public class NormalizedDateSegmentNameGenerator implements SegmentNameGenerator 
 
     // Include time value for APPEND push type
     if (_appendPushType) {
-      return JOINER.join(_segmentNamePrefix, getNormalizedDate(Preconditions.checkNotNull(minTimeValue)),
-          getNormalizedDate(Preconditions.checkNotNull(maxTimeValue)), sequenceIdInSegmentName);
+      return JOINER
+          .join(_segmentNamePrefix, getNormalizedDate(Preconditions.checkNotNull(minTimeValue)),
+              getNormalizedDate(Preconditions.checkNotNull(maxTimeValue)), sequenceIdInSegmentName)
+          .replaceAll(INVALID_SEGMENT_NAME_REGEX, DELIMITER);
     } else {
-      return JOINER.join(_segmentNamePrefix, sequenceIdInSegmentName);
+      return JOINER
+          .join(_segmentNamePrefix, sequenceIdInSegmentName)
+          .replaceAll(INVALID_SEGMENT_NAME_REGEX, DELIMITER);
     }
   }
 

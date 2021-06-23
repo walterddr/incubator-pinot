@@ -24,8 +24,10 @@ import static org.testng.Assert.assertEquals;
 
 
 public class SimpleSegmentNameGeneratorTest {
+  private static final String MALFORMED_TABLE_NAME = "test/Table";
   private static final String TABLE_NAME = "testTable";
   private static final String SEGMENT_NAME_POSTFIX = "postfix";
+  private static final String MALFORMED_SEGMENT_NAME_POSTFIX = "post*fix";
   private static final int INVALID_SEQUENCE_ID = -1;
   private static final int VALID_SEQUENCE_ID = 0;
   private static final long MIN_TIME_VALUE = 1234L;
@@ -54,5 +56,18 @@ public class SimpleSegmentNameGeneratorTest {
     assertEquals(segmentNameGenerator.generateSegmentName(VALID_SEQUENCE_ID, null, null), "testTable_postfix_0");
     assertEquals(segmentNameGenerator.generateSegmentName(VALID_SEQUENCE_ID, MIN_TIME_VALUE, MAX_TIME_VALUE),
         "testTable_1234_5678_postfix_0");
+  }
+
+  @Test
+  public void testWithMalFormedSegmentCharacters() {
+    SegmentNameGenerator segmentNameGenerator = new SimpleSegmentNameGenerator(MALFORMED_TABLE_NAME, MALFORMED_SEGMENT_NAME_POSTFIX);
+    assertEquals(segmentNameGenerator.toString(),
+        "SimpleSegmentNameGenerator: tableName=test/Table, segmentNamePostfix=post*fix");
+    assertEquals(segmentNameGenerator.generateSegmentName(INVALID_SEQUENCE_ID, null, null), "test_Table_post_fix");
+    assertEquals(segmentNameGenerator.generateSegmentName(INVALID_SEQUENCE_ID, MIN_TIME_VALUE, MAX_TIME_VALUE),
+        "test_Table_1234_5678_post_fix");
+    assertEquals(segmentNameGenerator.generateSegmentName(VALID_SEQUENCE_ID, null, null), "test_Table_post_fix_0");
+    assertEquals(segmentNameGenerator.generateSegmentName(VALID_SEQUENCE_ID, MIN_TIME_VALUE, MAX_TIME_VALUE),
+        "test_Table_1234_5678_post_fix_0");
   }
 }
