@@ -34,22 +34,22 @@ public class RegexpTransformFunctionTest extends BaseTransformFunctionTest {
   private static final Pattern PATTERN = Pattern.compile(REGEXP);
 
   @Test(dataProvider = "testLegalArguments")
-  public void testLegalArguments(String expressionStr) {
+  public void testLegalArguments(String expressionStr, int position, int occurance) {
     ExpressionContext expression = RequestContextUtils.getExpressionFromSQL(expressionStr);
     TransformFunction transformFunction = TransformFunctionFactory.get(expression, _dataSourceMap);
     String[] actualValues = transformFunction.transformToStringValuesSV(_projectionBlock);
     for (int i = 0; i < NUM_ROWS; i++) {
       Matcher matcher = PATTERN.matcher(_stringSVValues[i]);
-      Assert.assertEquals(matcher.matches() ? matcher.group() : null, actualValues[i]);
+      Assert.assertEquals(matcher.find(position-1) ? matcher.group(occurance-1) : null, actualValues[i]);
     }
   }
 
   @DataProvider(name = "testLegalArguments")
   public Object[][] testLegalArguments() {
     return new Object[][]{
-        new Object[]{String.format("REGEXP_EXTRACT(%s,'%s')", STRING_SV_COLUMN, REGEXP)},
-        new Object[]{String.format("REGEXP_EXTRACT(%s, '%s', 1)", STRING_SV_COLUMN, REGEXP)},
-        new Object[]{String.format("REGEXP_EXTRACT(%s, '%s', 1, 1)", STRING_SV_COLUMN, REGEXP)}
+        new Object[]{String.format("REGEXP_EXTRACT(%s,'%s')", STRING_SV_COLUMN, REGEXP), 1, 1},
+        new Object[]{String.format("REGEXP_EXTRACT(%s, '%s', 2)", STRING_SV_COLUMN, REGEXP), 2, 1},
+        new Object[]{String.format("REGEXP_EXTRACT(%s, '%s', 2, 2)", STRING_SV_COLUMN, REGEXP), 2 ,2}
     };
   }
 
