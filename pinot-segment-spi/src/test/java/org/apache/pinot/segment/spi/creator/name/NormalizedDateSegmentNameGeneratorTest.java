@@ -20,6 +20,7 @@ package org.apache.pinot.segment.spi.creator.name;
 
 import java.util.concurrent.TimeUnit;
 import org.apache.pinot.spi.data.DateTimeFormatSpec;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
@@ -29,6 +30,7 @@ public class NormalizedDateSegmentNameGeneratorTest {
   private static final String TABLE_NAME = "myTable";
   private static final String MALFORMED_TABLE_NAME = "my/Table";
   private static final String SEGMENT_NAME_PREFIX = "myTable_daily";
+  private static final String MALFORMED_SEGMENT_NAME_PREFIX = "myTable\\daily";
   private static final String APPEND_PUSH_TYPE = "APPEND";
   private static final String REFRESH_PUSH_TYPE = "REFRESH";
   private static final String EPOCH_TIME_FORMAT = "EPOCH";
@@ -145,16 +147,34 @@ public class NormalizedDateSegmentNameGeneratorTest {
   }
 
   @Test
-  public void testStringSlashWithMalFormedTableName() {
+  public void testMalFormedTableNameAndSegmentNamePrefix() {
+    try {
+      new NormalizedDateSegmentNameGenerator(MALFORMED_TABLE_NAME, null, false, APPEND_PUSH_TYPE, DAILY_PUSH_FREQUENCY,
+          new DateTimeFormatSpec(1, TimeUnit.DAYS.toString(), SIMPLE_DATE_TIME_FORMAT, STRING_SLASH_DATE_FORMAT));
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+    try {
+      new NormalizedDateSegmentNameGenerator(TABLE_NAME, MALFORMED_SEGMENT_NAME_PREFIX, false, APPEND_PUSH_TYPE, DAILY_PUSH_FREQUENCY,
+          new DateTimeFormatSpec(1, TimeUnit.DAYS.toString(), SIMPLE_DATE_TIME_FORMAT, STRING_SLASH_DATE_FORMAT));
+      Assert.fail();
+    } catch (IllegalArgumentException e) {
+      // Expected
+    }
+  }
+
+  @Test
+  public void testMalFormedDateFormatAndTimeValue() {
     SegmentNameGenerator segmentNameGenerator =
-        new NormalizedDateSegmentNameGenerator(MALFORMED_TABLE_NAME, null, false, APPEND_PUSH_TYPE, DAILY_PUSH_FREQUENCY,
+        new NormalizedDateSegmentNameGenerator(TABLE_NAME, null, false, APPEND_PUSH_TYPE, DAILY_PUSH_FREQUENCY,
             new DateTimeFormatSpec(1, TimeUnit.DAYS.toString(), SIMPLE_DATE_TIME_FORMAT, STRING_SLASH_DATE_FORMAT));
     assertEquals(segmentNameGenerator.toString(),
-        "NormalizedDateSegmentNameGenerator: segmentNamePrefix=my/Table, appendPushType=true, outputSDF=yyyy-MM-dd, inputSDF=yyyy/MM/dd");
+        "NormalizedDateSegmentNameGenerator: segmentNamePrefix=myTable, appendPushType=true, outputSDF=yyyy-MM-dd, inputSDF=yyyy/MM/dd");
     assertEquals(segmentNameGenerator.generateSegmentName(INVALID_SEQUENCE_ID, "1970/01/02", "1970/01/04"),
-        "my_Table_1970-01-02_1970-01-04");
+        "myTable_1970-01-02_1970-01-04");
     assertEquals(segmentNameGenerator.generateSegmentName(VALID_SEQUENCE_ID, "1970/01/02", "1970/01/04"),
-        "my_Table_1970-01-02_1970-01-04_1");
+        "myTable_1970-01-02_1970-01-04_1");
   }
 
   @Test

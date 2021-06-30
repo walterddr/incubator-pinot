@@ -51,6 +51,10 @@ public class NormalizedDateSegmentNameGenerator implements SegmentNameGenerator 
   public NormalizedDateSegmentNameGenerator(String tableName, @Nullable String segmentNamePrefix,
       boolean excludeSequenceId, @Nullable String pushType, @Nullable String pushFrequency, @Nullable
       DateTimeFormatSpec dateTimeFormatSpec) {
+    Preconditions.checkArgument(
+        tableName != null && ! tableName.matches(INVALID_SEGMENT_NAME_REGEX));
+    Preconditions.checkArgument(
+        segmentNamePrefix == null || ! segmentNamePrefix.matches(INVALID_SEGMENT_NAME_REGEX));
     _segmentNamePrefix = segmentNamePrefix != null ? segmentNamePrefix.trim() : tableName;
     _excludeSequenceId = excludeSequenceId;
     _appendPushType = "APPEND".equalsIgnoreCase(pushType);
@@ -90,14 +94,10 @@ public class NormalizedDateSegmentNameGenerator implements SegmentNameGenerator 
 
     // Include time value for APPEND push type
     if (_appendPushType) {
-      return JOINER
-          .join(_segmentNamePrefix, getNormalizedDate(Preconditions.checkNotNull(minTimeValue)),
-              getNormalizedDate(Preconditions.checkNotNull(maxTimeValue)), sequenceIdInSegmentName)
-          .replaceAll(INVALID_SEGMENT_NAME_REGEX, DELIMITER);
+      return JOINER.join(_segmentNamePrefix, getNormalizedDate(Preconditions.checkNotNull(minTimeValue)),
+          getNormalizedDate(Preconditions.checkNotNull(maxTimeValue)), sequenceIdInSegmentName);
     } else {
-      return JOINER
-          .join(_segmentNamePrefix, sequenceIdInSegmentName)
-          .replaceAll(INVALID_SEGMENT_NAME_REGEX, DELIMITER);
+      return JOINER.join(_segmentNamePrefix, sequenceIdInSegmentName);
     }
   }
 

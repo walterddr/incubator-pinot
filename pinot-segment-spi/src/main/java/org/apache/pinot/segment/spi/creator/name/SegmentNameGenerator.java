@@ -27,8 +27,7 @@ import javax.annotation.Nullable;
  * Interface for segment name generator based on the segment sequence id and time range.
  */
 public interface SegmentNameGenerator extends Serializable {
-  String DELIMITER = "_";
-  String INVALID_SEGMENT_NAME_REGEX = "[\\\\/:*?\"<>|]";
+  String INVALID_SEGMENT_NAME_REGEX = ".*[\\\\/:\\*?\"<>|].*";
   Joiner JOINER = Joiner.on('_').skipNulls();
 
   /**
